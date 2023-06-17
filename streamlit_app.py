@@ -1,4 +1,5 @@
 import streamlit as st
+import pprint
 from mftool import Mftool
 import pandas as pd
 import vectorbt as vbt
@@ -6,6 +7,7 @@ import json
 import quantstats as qs
 import warnings
 warnings.filterwarnings("ignore")
+from io import BytesIO
 
 def main():
     st.title("Mutual Fund Analysis")
@@ -18,35 +20,43 @@ def main():
         results = mf.get_available_schemes(Mutual_Fund_Issuer_Name)
         st.write(results)
 
-        Scheme_ID = st.selectbox("Select a Scheme ID", list(results.keys()))
+        Scheme_ID = st.text_input("Enter Scheme ID", "120716")
 
-        data_string = mf.get_scheme_historical_nav(Scheme_ID, as_json=True)
+        if Scheme_ID:
+            scheme_details = mf.get_scheme_details(Scheme_ID)
+            st.write(scheme_details)
 
-        scheme_name = mf.get_scheme_details(Scheme_ID)['scheme_name']
+            data_string = mf.get_scheme_historical_nav(Scheme_ID,as_json=True)
 
-        data = json.loads(data_string)
-        df = pd.DataFrame(data['data'])
-        df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
-        df = df.sort_values(by='date', ascending=True)
-        df['nav'] = df['nav'].astype(float)
-        df.set_index('date', inplace=True)
+            scheme_name = mf.get_scheme_details(Scheme_ID)['scheme_name']
 
-        init_cash = 100000
-        size = init_cash / df['nav'].iloc[0]
+            data = json.loads(data_string)
+            df = pd.DataFrame(data['data'])
+            df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
+            df = df.sort_values(by='date', ascending=True)
+            df['nav'] = df['nav'].astype(float)
+            df.set_index('date', inplace=True)
 
-        portfolio = vbt.Portfolio.from_orders(
-            df['nav'], 
-            size, 
-            init_cash=init_cash, 
-            freq='D'
-        )
+            init_cash = 100000
+            size = init_cash / df['nav'].iloc[0]
 
-        returns = portfolio.returns()
+            portfolio = vbt.Portfolio.from_orders(
+                df['nav'], 
+                size, 
+                init_cash=init_cash, 
+                freq='D'
+            )
 
-        st.header("Returns")
-        st.line_chart(returns)
+            returns = portfolio.returns()
 
-        # For additional plots, you need to convert them to suitable format for Streamlit
+            keepcharacters = (' ', '.', '_', '-')
+            filename = f"{scheme_name} - VectorBT.html"
+            filename = filename.replace("%", 'pct ')
+            filename = "".join(c for c in filename if c.isalnum() or c in keepcharacters).rstrip()
+
+            report_string = qs.reports.html(returns, title=f"{scheme_name}- VectorBT.html")
+            b64 = BytesIO(report_string.encode()).getvalue()
+            st.download_button(label="Download Report", data=b64, file_name=filename, mime='text/html')
 
 if __name__ == "__main__":
     main()
