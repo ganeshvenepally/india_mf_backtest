@@ -34,7 +34,6 @@ def create_portfolio(df):
 
     return portfolio
 
-# Main app
 def main():
     st.title("Mutual Fund Analysis")
     df = get_data()
@@ -47,13 +46,19 @@ def main():
 
     # Calculate and display statistics
     st.subheader('Statistics')
-    stats = qs.stats.calc(returns)
-    st.dataframe(stats.to_frame('Value'))
+    stats = qs.reports.metrics(returns)
+    st.dataframe(stats)
 
     # Display plots
     st.subheader('Plots')
     fig = qs.plots.snapshot(returns, title='Performance Snapshot')
     st.pyplot(fig)
+
+    # Generate and display HTML report
+    st.subheader('HTML Report')
+    report_html = qs.reports.html(returns, output='html')
+    st.markdown(report_html, unsafe_allow_html=True)
+
 
 if __name__ == "__main__":
     main()
