@@ -1,22 +1,24 @@
 import streamlit as st
 import pandas as pd
 import json
-from mftool import Mftool
 import vectorbt as vbt
 import quantstats as qs
 import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore")
+from mftool import Mftool
+
+
 
 
 def main():
 
     st.title("Mutual Fund Analyser")
+    mf = Mftool()
 
     # Get the input from the user
     Mutual_Fund_Issuer_Name = st.text_input("Enter Mutual Fund Issuer Name", "uti nifty")
     Scheme_ID = st.text_input("Enter Scheme ID", "120716")
-    mf = Mftool()
 
     # Get the results from the Mftool library
     results = mf.get_available_schemes(Mutual_Fund_Issuer_Name)
@@ -46,13 +48,15 @@ def main():
     # Initialize the portfolio by investing the entire cash balance in the asset
     init_cash = 100000  # initial cash in account currency
     size = init_cash / df['nav'].iloc[0]  # number of shares to buy (invest the entire cash balance)
+    price = df['nav'].iloc[0]  # price per share
 
     # Create a vectorbt Portfolio
     portfolio = vbt.Portfolio.from_orders(
         df['nav'],  # price per share
         size,  # size of the order
         init_cash=init_cash,  # initial cash
-        freq='D'  # set frequency to daily
+        freq='D',  # set frequency to daily
+        price=price,
     )
 
     # Calculate daily returns of the portfolio
@@ -60,12 +64,9 @@ def main():
 
     # Display the results
     st.write(returns)
-    
-    # Import the Quantstats library
-    import quantstats as qs
 
     # Create a Quantstats report
-    report = qs.reports.html(returns, title='My Portfolio Analysis', file='my_portfolio_analysis.html')
+    report = qs.reports.html(returns, title='My Portfolio Analysis')
 
     # Download the report
     with open('my_portfolio_analysis.html', 'wb') as f:
