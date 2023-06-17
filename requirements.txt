@@ -4,3 +4,4 @@ streamlit
 Mftool
 vectorbt
 quantstats
+weasyprint
