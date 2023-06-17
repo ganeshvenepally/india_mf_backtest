@@ -44,15 +44,9 @@ def main():
         returns = portfolio.returns()
 
         st.header("Returns")
-        st.plotly_chart(qs.plots.returns(returns, cumulative=True, logy=True))
+        st.line_chart(returns)
 
-        st.header("Monthly Returns Heatmap")
-        st.plotly_chart(qs.plots.monthly_heatmap(returns))
-
-        st.header("Drawdown")
-        st.plotly_chart(qs.plots.drawdown(returns))
-
-        # add more plots as needed
+        # For additional plots, you need to convert them to suitable format for Streamlit
 
 if __name__ == "__main__":
     main()
