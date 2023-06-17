@@ -7,8 +7,9 @@ import json
 import quantstats as qs
 import warnings
 warnings.filterwarnings("ignore")
-import os
+from io import BytesIO
 import tempfile
+import os
 
 def main():
     st.title("Mutual Fund Analysis")
@@ -55,12 +56,9 @@ def main():
             filename = filename.replace("%", 'pct ')
             filename = "".join(c for c in filename if c.isalnum() or c in keepcharacters).rstrip()
 
-            # Save to a temporary file
-            temp_dir = tempfile.gettempdir()
-            temp_file = os.path.join(temp_dir, filename)
-            qs.reports.html(returns, title=f"{scheme_name}- VectorBT.html", file=temp_file)
+            temp_file = os.path.join(tempfile.gettempdir(), filename)
+            qs.reports.save(returns, output=temp_file)
 
-            # Read the temporary file and create the download button
             with open(temp_file, 'r') as f:
                 report_string = f.read()
 
