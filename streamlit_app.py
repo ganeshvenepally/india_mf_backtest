@@ -1,34 +1,19 @@
-import streamlit as st
-import pprint
+# Necessary imports
 from mftool import Mftool
 import pandas as pd
 import vectorbt as vbt
 import json
 import quantstats as qs
-import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings("ignore")
+import streamlit as st
 
+# Streamlit title
 st.title('Mutual Fund Analysis')
 
-mf = Mftool()
+# function to calculate statistics
+def calculate_statistics(scheme_id):
+    mf = Mftool()
 
-# Get input from user using Streamlit
-Mutual_Fund_Issuer_Name = st.text_input("Enter Mutual Fund Issuer Name", 'uti nifty')
-
-if Mutual_Fund_Issuer_Name:
-    results = mf.get_available_schemes(Mutual_Fund_Issuer_Name)
-    st.write(results)
-
-# Get input from user using Streamlit
-Scheme_ID = st.text_input("Enter Scheme ID", '120716')
-
-if Scheme_ID:
-    details = mf.get_scheme_details(Scheme_ID)
-    st.write(details)
-
-    data_string = mf.get_scheme_historical_nav(Scheme_ID, as_json=True)
-    scheme_name = mf.get_scheme_details(Scheme_ID)['scheme_name']
+    data_string = mf.get_scheme_historical_nav(scheme_id,as_json=True)
 
     # Parse the string into a dictionary
     data = json.loads(data_string)
@@ -40,18 +25,13 @@ if Scheme_ID:
     df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
     df = df.sort_values(by='date', ascending=True)
 
-    # Check if there are any NaN values or zero values in the 'nav' column
-    if df['nav'].isnull().any():
-        st.error("There are missing values in the 'nav' column. Please check the data.")
-    elif (df['nav'] == 0).any():
-        st.error("There are zero values in the 'nav' column. Please check the data.")
-    else:
-        df.set_index('date', inplace=True)
+    # Convert nav to float and set date as index
+    df['nav'] = df['nav'].astype(float)
+    df.set_index('date', inplace=True)
 
     # Initialize the portfolio by investing the entire cash balance in the asset
     init_cash = 100000  # initial cash in account currency
     size = init_cash / df['nav'].iloc[0]  # number of shares to buy (invest the entire cash balance)
-
 
     # Create a vectorbt Portfolio
     portfolio = vbt.Portfolio.from_orders(
@@ -64,17 +44,12 @@ if Scheme_ID:
     # Calculate daily returns of the portfolio
     returns = portfolio.returns()
 
-    # Export Quantstats HTML Report
-    qs.reports.html(returns,  title=f"{scheme_name} - VectorBT.html" , output=filepath, download_filename=filepath)
-    
-    st.markdown(get_table_download_link(returns), unsafe_allow_html=True)
-    
-def get_table_download_link(df):
-    """Generates a link allowing the data in a given panda dataframe to be downloaded
-    in:  dataframe
-    out: href string
-    """
-    csv = df.to_csv(index=True)
-    b64 = base64.b64encode(csv.encode()).decode()  # some strings
-    href = f'<a href="data:file/csv;base64,{b64}" download="myfilename.csv">Download csv file</a>'
-    return href
+    # Now use QuantStats to calculate various statistics
+    return qs.reports.html(returns)
+
+# User input for scheme_id
+scheme_id = st.text_input("Enter scheme id", "125497")
+
+# Call calculate_statistics function when button is pressed
+if st.button('Calculate Statistics'):
+    st.markdown(calculate_statistics(scheme_id), unsafe_allow_html=True)
