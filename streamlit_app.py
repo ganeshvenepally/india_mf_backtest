@@ -5,6 +5,8 @@ import vectorbt as vbt
 import json
 import quantstats as qs
 import streamlit as st
+import tempfile
+
 
 # Streamlit title
 st.title('Mutual Fund Analysis')
@@ -45,7 +47,11 @@ def calculate_statistics(scheme_id):
     returns = portfolio.returns()
 
     # Now use QuantStats to calculate various statistics
-    return qs.reports.html(returns)
+    with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode='r+') as f:
+        qs.reports.html(returns, output=f.name)
+        f.seek(0)
+        html_string = f.read()
+    return html_string
 
 # User input for scheme_id
 scheme_id = st.text_input("Enter scheme id", "125497")
