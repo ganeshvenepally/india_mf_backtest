@@ -8,6 +8,7 @@ import quantstats as qs
 import warnings
 import base64
 import tempfile
+import os
 
 warnings.filterwarnings("ignore")
 
@@ -50,15 +51,33 @@ def main():
             )
 
             returns = portfolio.returns()
-            with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode='w') as tf:
-                qs.reports.html(returns, title=f"{scheme_name}- VectorBT.html", file=tf.name)
-                tf.seek(0)
-                report_html = tf.read().encode()
-  
-            b64 = base64.b64encode(report_html).decode()  # some strings <-> bytes conversions necessary here
-            href = f'<a href="data:text/html;base64,{b64}" download="{scheme_name}.html">Download HTML Report</a>'
-            
-            st.markdown(href, unsafe_allow_html=True)
+            filepath = f"{scheme_name} - VectorBT.html"
+            filepath = filepath.replace("%", 'pct ')
+            filepath = "".join(c for c in filepath if c.isalnum() or c in keepcharacters).rstrip()
+
+            # Create temporary file
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                temp_filename = tmp.name
+
+            try:
+                # Write report to temporary file
+                qs.reports.html(returns,  title=f"{scheme_name}- VectorBT.html" , output=temp_filename, download_filename=filepath)
+
+                # Read HTML content from temporary file
+                with open(temp_filename, 'r') as file:
+                    html_content = file.read()
+
+                # Provide download button for HTML content
+                st.download_button(
+                    label="Download report",
+                    data=html_content.encode('utf-8'),
+                    file_name=filepath,
+                    mime='text/html',
+                )
+
+            finally:
+                # Clean up temporary file
+                os.remove(temp_filename)
 
 if __name__ == "__main__":
     main()
