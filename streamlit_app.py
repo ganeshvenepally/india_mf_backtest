@@ -53,7 +53,9 @@ def main():
             returns = portfolio.returns()
 
             # Generate Quantstats HTML Report
-            report = qs.reports.html(returns, output='report.html')
+            #report = qs.reports.html(returns, output='report.html')
+            report = qs.reports.html(returns, output='report.html', heatmap=False)
+
 
             # Convert HTML report to bytes
             with open('report.html', 'r') as file:
