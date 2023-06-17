@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import json
-import mftool
+from mftool import Mftool
 import vectorbt as vbt
 import quantstats as qs
 import matplotlib.pyplot as plt
