@@ -7,6 +7,7 @@ import json
 import quantstats as qs
 import warnings
 import base64
+import tempfile
 
 warnings.filterwarnings("ignore")
 
@@ -50,9 +51,12 @@ def main():
 
             returns = portfolio.returns()
 
-            report_html = qs.reports.html(returns, title=f"{scheme_name}- VectorBT.html")
+            with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as tf:
+                qs.reports.html(returns, title=f"{scheme_name}- VectorBT.html", file=tf.name)
+                tf.seek(0)
+                report_html = tf.read()
 
-            b64 = base64.b64encode(report_html.encode()).decode()  # some strings <-> bytes conversions necessary here
+            b64 = base64.b64encode(report_html).decode()  # some strings <-> bytes conversions necessary here
             href = f'<a href="data:text/html;base64,{b64}" download="{scheme_name}.html">Download HTML Report</a>'
             
             st.markdown(href, unsafe_allow_html=True)
