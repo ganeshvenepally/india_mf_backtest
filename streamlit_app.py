@@ -53,15 +53,15 @@ def main():
             returns = portfolio.returns()
 
             # Generate Quantstats HTML Report
-            st.write('Returns')
-            st.line_chart(returns)
+            report = qs.reports.html(returns, output='report.html')
 
-            st.write('Drawdown')
-            st.line_chart(qs.stats.drawdown(returns))
+            # Convert HTML report to bytes
+            with open('report.html', 'r') as file:
+                report_html = file.read()
+            report_io = io.BytesIO(report_html.encode())
 
-            st.write('Monthly Returns')
-            st.line_chart(qs.stats.monthly_returns(returns))
-
+            # Offer download of report
+            st.download_button(label='Download report', data=report_io, file_name='report.html', mime='text/html')
 
 if __name__ == "__main__":
     main()
