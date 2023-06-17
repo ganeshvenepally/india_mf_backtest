@@ -5,11 +5,14 @@ import pandas as pd
 import vectorbt as vbt
 import json
 import quantstats as qs
+import matplotlib.pyplot as plt
 import warnings
-warnings.filterwarnings("ignore")
-from io import BytesIO
-import tempfile
 import os
+import tempfile
+from io import BytesIO
+import base64
+
+warnings.filterwarnings("ignore")
 
 def main():
     st.title("Mutual Fund Analysis")
@@ -50,20 +53,25 @@ def main():
             )
 
             returns = portfolio.returns()
+            
+            # Plot returns
+            plt.figure(figsize=[10,5])
+            qs.plots.returns(returns, cumulative=True, logy=True)
+            plt.title(f"Returns for {scheme_name}")
 
-            keepcharacters = (' ', '.', '_', '-')
-            filename = f"{scheme_name} - VectorBT.html"
-            filename = filename.replace("%", 'pct ')
-            filename = "".join(c for c in filename if c.isalnum() or c in keepcharacters).rstrip()
+            # Save figure to a BytesIO object
+            buf = BytesIO()
+            plt.savefig(buf, format="png")
+            # Embed the result in the html output.
+            data = base64.b64encode(buf.getbuffer()).decode("utf8")
+            st.markdown(f'<img src="data:image/png;base64,{data}" />', unsafe_allow_html=True)
 
-            temp_file = os.path.join(tempfile.gettempdir(), filename)
-            qs.reports.save(returns, output=temp_file)
-
-            with open(temp_file, 'r') as f:
-                report_string = f.read()
-
-            b64 = BytesIO(report_string.encode()).getvalue()
-            st.download_button(label="Download Report", data=b64, file_name=filename, mime='text/html')
+            st.download_button(
+                "Download image",
+                data=buf.getvalue(),
+                file_name=f"{scheme_name}.png",
+                mime="image/png",
+            )
 
 if __name__ == "__main__":
     main()
