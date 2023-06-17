@@ -65,7 +65,7 @@ def main():
     import quantstats as qs
 
     # Create a Quantstats report
-    report = qs.reports.html(returns, title='My Portfolio Analysis')
+    report = qs.reports.html(returns, title='My Portfolio Analysis', file='my_portfolio_analysis.html')
 
     # Download the report
     with open('my_portfolio_analysis.html', 'wb') as f:
