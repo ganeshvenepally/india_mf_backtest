@@ -61,5 +61,5 @@ def main():
             st.download_button(label='Download report', data=report_io, file_name='report.html', mime='text/html')
 
             # Create a pivot table from the returns DataFrame and fill any missing values with 0
-            returns = returns.pivot('Year', 'Month').fillna(0) 
+            returns = returns.pivot('Month', 'Year').fillna(0)
 
