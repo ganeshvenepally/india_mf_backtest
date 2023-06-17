@@ -1,11 +1,9 @@
 import streamlit as st
-import pprint
 from mftool import Mftool
 import pandas as pd
 import vectorbt as vbt
 import json
 import quantstats as qs
-import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -44,9 +42,17 @@ def main():
         )
 
         returns = portfolio.returns()
-        fig = qs.reports.full(returns, output="html", title=scheme_name)
-        st.plotly_chart(fig)
+
+        st.header("Returns")
+        st.plotly_chart(qs.plots.returns(returns, cumulative=True, logy=True))
+
+        st.header("Monthly Returns Heatmap")
+        st.plotly_chart(qs.plots.monthly_heatmap(returns))
+
+        st.header("Drawdown")
+        st.plotly_chart(qs.plots.drawdown(returns))
+
+        # add more plots as needed
 
 if __name__ == "__main__":
     main()
-
