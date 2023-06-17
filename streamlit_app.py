@@ -51,7 +51,7 @@ def main():
 
             # Calculate daily returns of the portfolio
             returns = portfolio.returns().to_frame()
-            returns = returns.pivot('Year', 'Month').fillna(0)
+            returns = returns.pivot('Year', 'Month')
 
 
             # Generate Quantstats HTML Report
