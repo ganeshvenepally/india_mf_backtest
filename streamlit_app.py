@@ -50,12 +50,11 @@ def main():
             )
 
             returns = portfolio.returns()
-
-            with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as tf:
+            with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode='w') as tf:
                 qs.reports.html(returns, title=f"{scheme_name}- VectorBT.html", file=tf.name)
                 tf.seek(0)
-                report_html = tf.read()
-
+                report_html = tf.read().encode()
+  
             b64 = base64.b64encode(report_html).decode()  # some strings <-> bytes conversions necessary here
             href = f'<a href="data:text/html;base64,{b64}" download="{scheme_name}.html">Download HTML Report</a>'
             
