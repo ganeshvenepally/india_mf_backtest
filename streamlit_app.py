@@ -6,60 +6,56 @@ import vectorbt as vbt
 import quantstats as qs
 import io
 
-def main():
-    st.title("Mutual Fund Analyser")
-    mf = Mftool()
-    
-    Mutual_Fund_Issuer_Name = st.text_input("Enter Mutual Fund Issuer Name", "uti nifty")
-    if Mutual_Fund_Issuer_Name:
-        results = mf.get_available_schemes(Mutual_Fund_Issuer_Name)
-        st.write(results)
-    
-        Scheme_ID = st.text_input("Enter Scheme ID", "120716")
-        if Scheme_ID:
-            st.write(mf.get_scheme_details(Scheme_ID))
+import streamlit as st
 
-            data_string = mf.get_scheme_historical_nav(Scheme_ID,as_json=True)
 
-            scheme_name = mf.get_scheme_details(Scheme_ID)['scheme_name']
 
-            # Parse the string into a dictionary
-            data = json.loads(data_string)
+# Create a Streamlit app
+st.title("Mutual Fund Analyser")
 
-            # Convert data to dataframe
-            df = pd.DataFrame(data['data'])
+# Get the input from the user
+Mutual_Fund_Issuer_Name = st.text_input("Enter Mutual Fund Issuer Name", "uti nifty")
+Scheme_ID = st.text_input("Enter Scheme ID", "120716")
 
-            # Convert date string to datetime and sort by date
-            df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
-            df = df.sort_values(by='date', ascending=True)
+# Get the results from the Mftool library
+results = mf.get_available_schemes(Mutual_Fund_Issuer_Name)
+st.write(results)
 
-            # Convert nav to float and set date as index
-            df['nav'] = df['nav'].astype(float)
-            df.set_index('date', inplace=True)
+st.write(mf.get_scheme_details(Scheme_ID))
 
-            # Initialize the portfolio by investing the entire cash balance in the asset
-            init_cash = 100000  # initial cash in account currency
-            size = init_cash / df['nav'].iloc[0]  # number of shares to buy (invest the entire cash balance)
+# Get the data from the vectorbt library
+data_string = mf.get_scheme_historical_nav(Scheme_ID, as_json=True)
 
-            # Create a vectorbt Portfolio
-            portfolio = vbt.Portfolio.from_orders(
-                df['nav'],  # price per share
-                size,  # size of the order
-                init_cash=init_cash,  # initial cash
-                freq='D'  # set frequency to daily
-            )
+scheme_name = mf.get_scheme_details(Scheme_ID)['scheme_name']
 
-            # Calculate daily returns of the portfolio
-            returns = portfolio.returns()
+# Parse the string into a dictionary
+data = json.loads(data_string)
 
-            # Convert DataFrame to bytes
-            with open('report.html', 'r') as file:
-                report_html = file.read()
-            report_io = io.BytesIO(report_html.encode())
+# Convert data to dataframe
+df = pd.DataFrame(data['data'])
 
-            # Offer download of report
-            st.download_button(label='Download report', data=report_io, file_name='report.html', mime='text/html')
+# Convert date string to datetime and sort by date
+df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
+df = df.sort_values(by='date', ascending=True)
 
-            # Create a pivot table from the returns DataFrame and fill any missing values with 0
-            returns = returns.pivot('Month', 'Year').fillna(0)
+# Convert nav to float and set date as index
+df['nav'] = df['nav'].astype(float)
+df.set_index('date', inplace=True)
 
+# Initialize the portfolio by investing the entire cash balance in the asset
+init_cash = 100000  # initial cash in account currency
+size = init_cash / df['nav'].iloc[0]  # number of shares to buy (invest the entire cash balance)
+
+# Create a vectorbt Portfolio
+portfolio = vbt.Portfolio.from_orders(
+    df['nav'],  # price per share
+    size,  # size of the order
+    init_cash=init_cash,  # initial cash
+    freq='D'  # set frequency to daily
+)
+
+# Calculate daily returns of the portfolio
+returns = portfolio.returns()
+
+# Display the results
+st.write(returns)
