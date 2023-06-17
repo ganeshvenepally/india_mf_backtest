@@ -6,9 +6,7 @@ import vectorbt as vbt
 import json
 import quantstats as qs
 import warnings
-import os
-from io import BytesIO
-from weasyprint import HTML
+import base64
 
 warnings.filterwarnings("ignore")
 
@@ -54,19 +52,10 @@ def main():
 
             report_html = qs.reports.html(returns, title=f"{scheme_name}- VectorBT.html")
 
-            # Convert HTML string to PDF using WeasyPrint
-            HTML(string=report_html).write_pdf(f"{scheme_name}.pdf")
-
-            # Convert PDF into bytes for download
-            with open(f"{scheme_name}.pdf", "rb") as f:
-                pdf_bytes = f.read()
-
-            st.download_button(
-                "Download report as PDF",
-                data=pdf_bytes,
-                file_name=f"{scheme_name}.pdf",
-                mime="application/pdf"
-            )
+            b64 = base64.b64encode(report_html.encode()).decode()  # some strings <-> bytes conversions necessary here
+            href = f'<a href="data:text/html;base64,{b64}" download="{scheme_name}.html">Download HTML Report</a>'
+            
+            st.markdown(href, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
