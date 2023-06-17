@@ -5,12 +5,10 @@ import pandas as pd
 import vectorbt as vbt
 import json
 import quantstats as qs
-import matplotlib.pyplot as plt
 import warnings
 import os
-import tempfile
 from io import BytesIO
-import base64
+from weasyprint import HTML
 
 warnings.filterwarnings("ignore")
 
@@ -53,24 +51,21 @@ def main():
             )
 
             returns = portfolio.returns()
-            
-            # Plot returns
-            plt.figure(figsize=[10,5])
-            qs.plots.returns(returns, cumulative=True, logy=True)
-            plt.title(f"Returns for {scheme_name}")
 
-            # Save figure to a BytesIO object
-            buf = BytesIO()
-            plt.savefig(buf, format="png")
-            # Embed the result in the html output.
-            data = base64.b64encode(buf.getbuffer()).decode("utf8")
-            st.markdown(f'<img src="data:image/png;base64,{data}" />', unsafe_allow_html=True)
+            report_html = qs.reports.html(returns, title=f"{scheme_name}- VectorBT.html")
+
+            # Convert HTML string to PDF using WeasyPrint
+            HTML(string=report_html).write_pdf(f"{scheme_name}.pdf")
+
+            # Convert PDF into bytes for download
+            with open(f"{scheme_name}.pdf", "rb") as f:
+                pdf_bytes = f.read()
 
             st.download_button(
-                "Download image",
-                data=buf.getvalue(),
-                file_name=f"{scheme_name}.png",
-                mime="image/png",
+                "Download report as PDF",
+                data=pdf_bytes,
+                file_name=f"{scheme_name}.pdf",
+                mime="application/pdf"
             )
 
 if __name__ == "__main__":
