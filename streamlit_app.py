@@ -1,37 +1,26 @@
-# Necessary imports
+# Import necessary libraries
+import streamlit as st
 from mftool import Mftool
 import pandas as pd
 import vectorbt as vbt
 import json
 import quantstats as qs
-import streamlit as st
-import tempfile
 
-
-# Streamlit title
-st.title('Mutual Fund Analysis')
-
-# function to calculate statistics
-def calculate_statistics(scheme_id):
+# Create a function to get and process data
+def get_data():
     mf = Mftool()
-
-    data_string = mf.get_scheme_historical_nav(scheme_id,as_json=True)
-
-    # Parse the string into a dictionary
+    data_string = mf.get_scheme_historical_nav("125497",as_json=True)
     data = json.loads(data_string)
-
-    # Convert data to dataframe
     df = pd.DataFrame(data['data'])
-
-    # Convert date string to datetime and sort by date
     df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
     df = df.sort_values(by='date', ascending=True)
-
-    # Convert nav to float and set date as index
     df['nav'] = df['nav'].astype(float)
     df.set_index('date', inplace=True)
 
-    # Initialize the portfolio by investing the entire cash balance in the asset
+    return df
+
+# Create a function to create a portfolio
+def create_portfolio(df):
     init_cash = 100000  # initial cash in account currency
     size = init_cash / df['nav'].iloc[0]  # number of shares to buy (invest the entire cash balance)
 
@@ -43,19 +32,28 @@ def calculate_statistics(scheme_id):
         freq='D'  # set frequency to daily
     )
 
-    # Calculate daily returns of the portfolio
+    return portfolio
+
+# Main app
+def main():
+    st.title("Mutual Fund Analysis")
+    df = get_data()
+    portfolio = create_portfolio(df)
     returns = portfolio.returns()
 
-    # Now use QuantStats to calculate various statistics
-    with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode='r+') as f:
-        qs.reports.html(returns, output=f.name)
-        f.seek(0)
-        html_string = f.read()
-    return html_string
+    # Display the returns
+    st.subheader('Returns')
+    st.dataframe(returns)
 
-# User input for scheme_id
-scheme_id = st.text_input("Enter scheme id", "125497")
+    # Calculate and display statistics
+    st.subheader('Statistics')
+    stats = qs.stats.calc(returns)
+    st.dataframe(stats.to_frame('Value'))
 
-# Call calculate_statistics function when button is pressed
-if st.button('Calculate Statistics'):
-    st.markdown(calculate_statistics(scheme_id), unsafe_allow_html=True)
+    # Display plots
+    st.subheader('Plots')
+    fig = qs.plots.snapshot(returns, title='Performance Snapshot')
+    st.pyplot(fig)
+
+if __name__ == "__main__":
+    main()
