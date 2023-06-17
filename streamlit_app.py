@@ -60,6 +60,19 @@ def main():
 
     # Display the results
     st.write(returns)
+    
+    # Import the Quantstats library
+    import quantstats as qs
+
+    # Create a Quantstats report
+    report = qs.reports.html(returns, title='My Portfolio Analysis')
+
+    # Download the report
+    with open('my_portfolio_analysis.html', 'wb') as f:
+        f.write(report.content)
+
+    # Display a download button
+    st.download_button('Download Report', 'my_portfolio_analysis.html')
 
 
 if __name__ == "__main__":
