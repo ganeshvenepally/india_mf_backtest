@@ -40,13 +40,18 @@ if Scheme_ID:
     df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
     df = df.sort_values(by='date', ascending=True)
 
-    # Convert nav to float and set date as index
-    df['nav'] = df['nav'].astype(float)
-    df.set_index('date', inplace=True)
+    # Check if there are any NaN values or zero values in the 'nav' column
+    if df['nav'].isnull().any():
+        st.error("There are missing values in the 'nav' column. Please check the data.")
+    elif (df['nav'] == 0).any():
+        st.error("There are zero values in the 'nav' column. Please check the data.")
+    else:
+        df.set_index('date', inplace=True)
 
     # Initialize the portfolio by investing the entire cash balance in the asset
     init_cash = 100000  # initial cash in account currency
     size = init_cash / df['nav'].iloc[0]  # number of shares to buy (invest the entire cash balance)
+
 
     # Create a vectorbt Portfolio
     portfolio = vbt.Portfolio.from_orders(
