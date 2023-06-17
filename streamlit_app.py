@@ -1,13 +1,10 @@
 import streamlit as st
 import pandas as pd
 import json
-import pprint
 from mftool import Mftool
 import vectorbt as vbt
 import quantstats as qs
-import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings("ignore")
+import io
 
 def main():
     st.title("Mutual Fund Analyser")
@@ -55,8 +52,16 @@ def main():
             # Calculate daily returns of the portfolio
             returns = portfolio.returns()
 
-            # Display the returns graph
-            st.write(qs.plots.snapshot(returns, title='Portfolio performance'))
+            # Generate Quantstats HTML Report
+            report = qs.reports.html(returns, output='report.html')
+
+            # Convert HTML report to bytes
+            with open('report.html', 'r') as file:
+                report_html = file.read()
+            report_io = io.BytesIO(report_html.encode())
+
+            # Offer download of report
+            st.download_button(label='Download report', data=report_io, file_name='report.html', mime='text/html')
 
 if __name__ == "__main__":
     main()
