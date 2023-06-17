@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import json
-from mftool import Mftool
+import mftool
 import vectorbt as vbt
 import quantstats as qs
 import matplotlib.pyplot as plt
@@ -16,6 +16,7 @@ def main():
     # Get the input from the user
     Mutual_Fund_Issuer_Name = st.text_input("Enter Mutual Fund Issuer Name", "uti nifty")
     Scheme_ID = st.text_input("Enter Scheme ID", "120716")
+    mf = Mftool()
 
     # Get the results from the Mftool library
     results = mf.get_available_schemes(Mutual_Fund_Issuer_Name)
