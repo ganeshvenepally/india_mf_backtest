@@ -1,83 +1,62 @@
 import streamlit as st
+import pandas as pd
+import json
 import pprint
 from mftool import Mftool
-import pandas as pd
 import vectorbt as vbt
-import json
 import quantstats as qs
+import matplotlib.pyplot as plt
 import warnings
-import base64
-import tempfile
-import os
-
 warnings.filterwarnings("ignore")
 
 def main():
-    st.title("Mutual Fund Analysis")
-
+    st.title("Mutual Fund Analyser")
     mf = Mftool()
-
+    
     Mutual_Fund_Issuer_Name = st.text_input("Enter Mutual Fund Issuer Name", "uti nifty")
-
     if Mutual_Fund_Issuer_Name:
         results = mf.get_available_schemes(Mutual_Fund_Issuer_Name)
         st.write(results)
-
+    
         Scheme_ID = st.text_input("Enter Scheme ID", "120716")
-
         if Scheme_ID:
-            scheme_details = mf.get_scheme_details(Scheme_ID)
-            st.write(scheme_details)
+            st.write(mf.get_scheme_details(Scheme_ID))
 
             data_string = mf.get_scheme_historical_nav(Scheme_ID,as_json=True)
 
             scheme_name = mf.get_scheme_details(Scheme_ID)['scheme_name']
 
+            # Parse the string into a dictionary
             data = json.loads(data_string)
+
+            # Convert data to dataframe
             df = pd.DataFrame(data['data'])
+
+            # Convert date string to datetime and sort by date
             df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
             df = df.sort_values(by='date', ascending=True)
+
+            # Convert nav to float and set date as index
             df['nav'] = df['nav'].astype(float)
             df.set_index('date', inplace=True)
 
-            init_cash = 100000
-            size = init_cash / df['nav'].iloc[0]
+            # Initialize the portfolio by investing the entire cash balance in the asset
+            init_cash = 100000  # initial cash in account currency
+            size = init_cash / df['nav'].iloc[0]  # number of shares to buy (invest the entire cash balance)
 
+            # Create a vectorbt Portfolio
             portfolio = vbt.Portfolio.from_orders(
-                df['nav'], 
-                size, 
-                init_cash=init_cash, 
-                freq='D'
+                df['nav'],  # price per share
+                size,  # size of the order
+                init_cash=init_cash,  # initial cash
+                freq='D'  # set frequency to daily
             )
 
+            # Calculate daily returns of the portfolio
             returns = portfolio.returns()
-            filepath = f"{scheme_name} - VectorBT.html"
-            filepath = filepath.replace("%", 'pct ')
-            filepath = "".join(c for c in filepath if c.isalnum() or c in keepcharacters).rstrip()
 
-            # Create temporary file
-            with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                temp_filename = tmp.name
-
-            try:
-                # Write report to temporary file
-                qs.reports.html(returns,  title=f"{scheme_name}- VectorBT.html" , output=temp_filename, download_filename=filepath)
-
-                # Read HTML content from temporary file
-                with open(temp_filename, 'r') as file:
-                    html_content = file.read()
-
-                # Provide download button for HTML content
-                st.download_button(
-                    label="Download report",
-                    data=html_content.encode('utf-8'),
-                    file_name=filepath,
-                    mime='text/html',
-                )
-
-            finally:
-                # Clean up temporary file
-                os.remove(temp_filename)
+            # Display the returns graph
+            st.write(qs.plots.snapshot(returns, title='Portfolio performance'))
 
 if __name__ == "__main__":
     main()
