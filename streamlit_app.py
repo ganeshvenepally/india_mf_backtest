@@ -50,7 +50,7 @@ def main():
             )
 
             # Calculate daily returns of the portfolio
-            returns = portfolio.returns()
+            returns = portfolio.returns().to_frame()
             returns = returns.pivot('Year', 'Month').fillna(0)
 
 
