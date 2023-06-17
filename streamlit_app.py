@@ -54,7 +54,7 @@ def main():
 
             # Generate Quantstats HTML Report
             st.write('Returns')
-            st.line_chart(qs.stats.daily_returns(returns))
+            st.line_chart(returns)
 
             st.write('Drawdown')
             st.line_chart(qs.stats.drawdown(returns))
