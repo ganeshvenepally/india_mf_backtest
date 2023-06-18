@@ -36,6 +36,7 @@ def create_portfolio(df):
     return portfolio
 
 def main():
+    st.set_option('deprecation.showPyplotGlobalUse', False)  # Disable the warning
     st.title("Mutual Fund Analysis")
     df = get_data()
     portfolio = create_portfolio(df)
