@@ -5,6 +5,7 @@ import pandas as pd
 import vectorbt as vbt
 import json
 import quantstats as qs
+import logging
 
 # Create a function to get and process data
 def get_data():
@@ -59,6 +60,7 @@ def main():
     report_html = qs.reports.html(returns, output='html')
     st.markdown(report_html, unsafe_allow_html=True)
 
-
 if __name__ == "__main__":
+    # Suppress font not found warnings
+    logging.getLogger('matplotlib.font_manager').setLevel(logging.CRITICAL)
     main()
