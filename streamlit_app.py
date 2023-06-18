@@ -1,67 +1,70 @@
-# Import necessary libraries
 import streamlit as st
+import pprint
 from mftool import Mftool
 import pandas as pd
 import vectorbt as vbt
 import json
 import quantstats as qs
-import logging
+import matplotlib.pyplot as plt
+from urllib.parse import quote
 
-# Create a function to get and process data
-def get_data():
-    mf = Mftool()
-    data_string = mf.get_scheme_historical_nav("125497",as_json=True)
-    data = json.loads(data_string)
-    df = pd.DataFrame(data['data'])
-    df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
-    df = df.sort_values(by='date', ascending=True)
-    df['nav'] = df['nav'].astype(float)
-    df.set_index('date', inplace=True)
+# Set Streamlit options
+st.set_option('deprecation.showPyplotGlobalUse', False)
 
-    return df
+mf = Mftool()
 
-# Create a function to create a portfolio
-def create_portfolio(df):
-    init_cash = 100000  # initial cash in account currency
-    size = init_cash / df['nav'].iloc[0]  # number of shares to buy (invest the entire cash balance)
+# Input for Mutual Issuer Name
+Mutual_Issuer_Name = st.text_input('Enter Mutual Issuer Name')
 
-    # Create a vectorbt Portfolio
-    portfolio = vbt.Portfolio.from_orders(
-        df['nav'],  # price per share
-        size,  # size of the order
-        init_cash=init_cash,  # initial cash
-        freq='D'  # set frequency to daily
-    )
+if Mutual_Issuer_Name:
+    results = mf.get_available_schemes(Mutual_Issuer_Name)
+    st.write(results)
 
-    return portfolio
+    # Input for Scheme ID
+    Scheme_ID = st.text_input('Enter Scheme ID')
 
-def main():
-    st.set_option('deprecation.showPyplotGlobalUse', False)  # Disable the warning
-    st.title("Mutual Fund Analysis")
-    df = get_data()
-    portfolio = create_portfolio(df)
-    returns = portfolio.returns()
+    if Scheme_ID:
+        scheme_details = mf.get_scheme_details(Scheme_ID)
+        st.write(scheme_details)
 
-    # Display the returns
-    st.subheader('Returns')
-    st.dataframe(returns)
+        data_string = mf.get_scheme_historical_nav(Scheme_ID,as_json=True)
+        scheme_name = scheme_details['scheme_name']
 
-    # Calculate and display statistics
-    st.subheader('Statistics')
-    stats = qs.reports.metrics(returns)
-    st.dataframe(stats)
+        # Parse the string into a dictionary
+        data = json.loads(data_string)
 
-    # Display plots
-    st.subheader('Plots')
-    fig = qs.plots.snapshot(returns, title='Performance Snapshot')
-    st.pyplot(fig)
+        # Convert data to dataframe
+        df = pd.DataFrame(data['data'])
 
-    # Generate and display HTML report
-    st.subheader('HTML Report')
-    report_html = qs.reports.html(returns, output='html')
-    st.markdown(report_html, unsafe_allow_html=True)
+        # Convert date string to datetime and sort by date
+        df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
+        df = df.sort_values(by='date', ascending=True)
 
-if __name__ == "__main__":
-    # Suppress font not found warnings
-    logging.getLogger('matplotlib.font_manager').setLevel(logging.CRITICAL)
-    main()
+        # Convert nav to float and set date as index
+        df['nav'] = df['nav'].astype(float)
+        df.set_index('date', inplace=True)
+
+        # Initialize the portfolio by investing the entire cash balance in the asset
+        init_cash = 100000  # initial cash in account currency
+        size = init_cash / df['nav'].iloc[0]  # number of shares to buy (invest the entire cash balance)
+
+        # Create a vectorbt Portfolio
+        portfolio = vbt.Portfolio.from_orders(
+            df['nav'],  # price per share
+            size,  # size of the order
+            init_cash=init_cash,  # initial cash
+            freq='D'  # set frequency to daily
+        )
+
+        # Calculate daily returns of the portfolio
+        returns = portfolio.returns()
+
+        # Export Quantstats HTML Report
+        keepcharacters = (' ', '.', '_', '-')
+        filepath = f"{scheme_name} - VectorBT.html"
+        filepath = filepath.replace("%", 'pct ')
+        filepath = "".join(c for c in filepath if c.isalnum() or c in keepcharacters).rstrip()
+        qs.reports.html(returns,  title=f"{scheme_name}- VectorBT.html" , output=filepath)
+
+        # Provide a download link for the report
+        st.markdown(f'[Download report]({quote(filepath)})')
