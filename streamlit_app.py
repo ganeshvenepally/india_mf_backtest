@@ -8,7 +8,15 @@ import warnings
 from mftool import Mftool
 
 warnings.filterwarnings("ignore")
+import base64
 
+def get_table_download_link(df, filename='data.html', text='Download HTML data'):
+    """Generates a link allowing the data in a given pandas dataframe to be downloaded"""
+    html = df.to_html()
+    b64 = base64.b64encode(html.encode()).decode()  # some strings <-> bytes conversions necessary here
+    href = f'<a href="data:text/html;base64,{b64}" download="{filename}">{text}</a>'
+    return href
+    
 st.title('Mutual Fund Analysis')
 
 # User input
@@ -43,7 +51,11 @@ if st.button('Analyze'):
 
     returns = portfolio.returns()
     #st.line_chart(returns)
-
     st.subheader('Quantstats Report')
     report = qs.reports.html(returns, output='htmlstring')
     st.components.v1.html(report, height=800, scrolling=True)
+
+    st.markdown(get_table_download_link(report), unsafe_allow_html=True)
+
+
+
