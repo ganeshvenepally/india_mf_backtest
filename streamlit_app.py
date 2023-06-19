@@ -1,3 +1,3 @@
 import quantstats as qs
 
-stock = qs.utils.download_returns('FB')
+stock = qs.utils.download_returns('META')
